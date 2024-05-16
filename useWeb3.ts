@@ -16,15 +16,20 @@ export const useWeb3 = () => {
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
-    initWeb3();
-  }, []);
+    if (!web3State.web3 || !web3State.accounts || !web3State.contract) {
+      initWeb3();
+    }
+  }, [web3State]);
 
   const initWeb3 = async () => {
     try {
       checkIfMetaMaskIsAvailable();
       const web3 = initializeWeb3();
-      const accounts = await web3.eth.getAccounts();
-      const contract = initializeContract(web3);
+      // Using Promise.all to save time waiting for promises individually
+      const [accounts, contract] = await Promise.all([
+        web3.eth.getAccounts(),
+        initializeContractAsync(web3), // Assuming this could be adjusted for async initialization if necessary
+      ]);
       setWeb3State({ web3, accounts, contract });
     } catch (error) {
       handleError(error);
@@ -45,7 +50,8 @@ export const useWeb3 = () => {
     return new Web3(window.ethereum);
   };
 
-  const initializeContract = (web3: Web3) => {
+  // Assuming this function could potentially be async
+  const initializeContractAsync = async (web3: Web3) => {
     return new web3.eth.Contract(BulletinBoardABI, CONTRACT_ADDRESS);
   };
 
