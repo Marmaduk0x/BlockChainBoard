@@ -16,10 +16,25 @@ export const useWeb3 = () => {
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
-    if (!web3State.web3 || !web3State.accounts || !web3State.contract) {
-      initWeb3();
-    }
-  }, [web3State]);
+    initWeb3();
+    // Listen for account changes
+    window.ethereum.on('accountsChanged', (accounts: string[]) => {
+      // Update accounts and reset the contract with the new accounts
+      setWeb3State(web3State => ({ ...web3State, accounts }));
+    });
+
+    // Listen for network changes (chainChanged) to reload the app
+    window.ethereum.on('chainChanged', (chainId: string) => {
+      window.location.reload();
+    });
+
+    return () => {
+      if (window.ethereum.removeListener) {
+        window.ethereum.removeListener('accountsChanged', () => {});
+        window.ethereum.removeListener('chainChanged', () => {});
+      }
+    };
+  }, []); // Removed web3State dependency to avoid infinite reinitialization
 
   const initWeb3 = async () => {
     try {
@@ -28,7 +43,7 @@ export const useWeb3 = () => {
       // Using Promise.all to save time waiting for promises individually
       const [accounts, contract] = await Promise.all([
         web3.eth.getAccounts(),
-        initializeContractAsync(web3), // Assuming this could be adjusted for async initialization if necessary
+        initializeContractAsync(web3),
       ]);
       setWeb3State({ web3, accounts, contract });
     } catch (error) {
@@ -50,7 +65,6 @@ export const useWeb3 = () => {
     return new Web3(window.ethereum);
   };
 
-  // Assuming this function could potentially be async
   const initializeContractAsync = async (web3: Web3) => {
     return new web3.eth.Contract(BulletinBoardABI, CONTRACT_ADDRESS);
   };
