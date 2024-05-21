@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Web3 from 'web3';
-import { ethers } from "ethers";
 import './App.css';
 
 interface IMessage {
@@ -9,81 +7,81 @@ interface IMessage {
   timestamp: number;
 }
 
-const BlockChainBoard: React.FC = () => {
-  const [currentAccount, setCurrentAccount] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
-  const [messages, setMessages] = useState<IMessage[]>([]);
+const BlockchainMessageBoard: React.FC = () => {
+  const [userWalletAddress, setUserWalletAddress] = useState<string>("");
+  const [newMessage, setNewMessage] = useState<string>("");
+  const [messageBoard, setMessageBoard] = useState<IMessage[]>([]);
 
-  const checkWalletIsConnected = async () => {
+  const checkIfWalletIsConnected = async () => {
     try {
       const { ethereum } = window as any;
       if (!ethereum) {
-        console.log("Ensure you have MetaMask installed!");
+        console.log("Please ensure you have MetaMask installed!");
         return;
       } else {
         console.log("Ethereum object detected: ", ethereum);
-        const accounts = await ethereum.request({method: 'eth_accounts'});
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
         if (accounts.length !== 0) {
-          const account = accounts[0];
-          setCurrentAccount(account);
+          const primaryAccount = accounts[0];
+          setUserWalletAddress(primaryAccount);
         } else {
           console.log("No authorized account found");
         }
       }
     } catch (error) {
-      console.error(error);
+      console.error('Wallet connection error:', error);
     }
   };
 
-  const connectWalletHandler = async () => {
+  const handleWalletConnection = async () => {
     try {
       const { ethereum } = window as any;
       if (!ethereum) {
-        alert("Download MetaMask!");
+        alert("MetaMask is required for this application. Please install it.");
         return;
       }
       const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      console.log("Connected", accounts[0]);
-      setCurrentAccount(accounts[0]);
+      console.log("Wallet connected:", accounts[0]);
+      setUserWalletAddress(accounts[0]);
     } catch (error) {
-      console.error(error);
+      console.error('Error connecting wallet:', error);
     }
   };
 
-  const submitMessageHandler = async () => {
-    console.log("Submitting message: ", message);
-    setMessage('');
+  const handleMessageSubmission = async () => {
+    console.log("Message submitted: ", newMessage);
+    setNewMessage('');
   };
 
   useEffect(() => {
-    checkWalletIsConnected();
+    checkIfWalletIsConnected();
   }, []);
 
   return (
     <div className="App">
       <header className="App-header">
-        {currentAccount ? (
+        {userWalletAddress ? (
           <div>
-            <h1>BlockChain Message Board</h1>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)}></textarea>
-            <button onClick={submitMessageHandler}>Submit Message</button>
-            <h2>Messages</h2>
+            <h1>Blockchain Message Board</h1>
+            <textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)}></textarea>
+            <button onClick={handleMessageSubmission}>Submit Message</button>
+            <h2>Message Board</h2>
             <div>
-              {messages.map((msg, index) => (
+              {messageBoard.map((msg, index) => (
                 <div key={index}>
                   <p><strong>Sender:</strong> {msg.sender}</p>
                   <p><strong>Message:</strong> {msg.content}</p>
-                  <p><strong>At:</strong> {new Date(msg.timestamp * 1000).toLocaleString()}</p>
+                  <p><strong>Timestamp:</strong> {new Date(msg.timestamp * 1000).toLocaleString()}</p>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <button onClick={connectWalletHandler}>Connect Wallet</button>
+          <button onClick={handleWalletConnection}>Connect Wallet</button>
         )}
       </header>
     </div>
   );
 };
 
-export default BlockChainBoard;
+export default BlockchainMessageBoard;
