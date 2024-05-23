@@ -11,12 +11,14 @@ const BlockchainMessageBoard: React.FC = () => {
   const [userWalletAddress, setUserWalletAddress] = useState<string>("");
   const [newMessage, setNewMessage] = useState<string>("");
   const [messageBoard, setMessageBoard] = useState<IMessage[]>([]);
+  const [error, setError] = useState<string>(""); // Error state
 
   const checkIfWalletIsConnected = async () => {
     try {
       const { ethereum } = window as any;
       if (!ethereum) {
         console.log("Please ensure you have MetaMask installed!");
+        setError("MetaMask not detected."); // Setting error
         return;
       } else {
         console.log("Ethereum object detected: ", ethereum);
@@ -26,10 +28,12 @@ const BlockchainMessageBoard: React.FC = () => {
           setUserWalletAddress(primaryAccount);
         } else {
           console.log("No authorized account found");
+          setError("No authorized account found."); // Setting error
         }
       }
     } catch (error) {
       console.error('Wallet connection error:', error);
+      setError('Wallet connection error.'); // Setting error
     }
   };
 
@@ -45,12 +49,22 @@ const BlockchainMessageBoard: React.FC = () => {
       setUserWalletAddress(accounts[0]);
     } catch (error) {
       console.error('Error connecting wallet:', error);
+      setError('Error connecting wallet.'); // Setting error
     }
   };
 
   const handleMessageSubmission = async () => {
-    console.log("Message submitted: ", newMessage);
-    setNewMessage('');
+    // Assuming message submission might involve interacting with the Ethereum network or a backend
+    try {
+      console.log("Message submitted: ", newMessage);
+      // Simulate message submission operation, including possible failure
+      // Example: await submitMessageToBlockchain(newMessage);
+
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error submitting message:', error);
+      setError('Error submitting message.'); // Setting error
+    }
   };
 
   useEffect(() => {
@@ -60,6 +74,7 @@ const BlockchainMessageBoard: React.FC = () => {
   return (
     <div className="App">
       <header className="App-header">
+        {error && <p className="Error">{error}</p>} {/* Displaying errors */}
         {userWalletAddress ? (
           <div>
             <h1>Blockchain Message Board</h1>
