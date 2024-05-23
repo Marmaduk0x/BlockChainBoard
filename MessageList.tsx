@@ -1,49 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import Web3 from 'web3';
 import contractABI from './contractABI.json';
-const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
 
-interface IMessage {
+const blockchainContractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+
+interface BlockchainMessage {
   content: string;
   sender: string;
   timestamp: string;
 }
 
-const MessageList: React.FC = () => {
-  const [messages, setMessages] = useState<IMessage[]>([]);
-  const [web3, setWeb3] = useState<Web3 | null>(null);
+const MessageBoard: React.FC = () => {
+  const [boardMessages, setBoardMessages] = useState<BlockchainMessage[]>([]);
+  const [blockchainWeb3Instance, setBlockchainWeb3Instance] = useState<Web3 | null>(null);
 
   useEffect(() => {
     if (window.ethereum) {
-      const web3Instance = new Web3(window.ethereum);
-      setWeb3(web3Instance);
+      const web3 = new Web3(window.ethereum);
+      setBlockchainWeb3Instance(web3);
     } else {
-      console.error("Ethereum object not found, you must install MetaMask!");
+      console.error("Ethereum object not found. Please install MetaMask to interact with the blockchain.");
     }
   }, []);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (web3) {
-        const contract = new web3.eth.Contract(contractABI, contractAddress);
-        const messages = await contract.methods.getMessages().call();
+    const loadMessagesFromBlockchain = async () => {
+      if (blockchainWeb3Instance && blockchainContractAddress) {
+        const contract = new blockchainWeb3Instance.eth.Contract(contractABI, blockchainContractAddress);
+        const blockchainMessages = await contract.methods.getMessages().call();
 
-        const formattedMessages = messages.map((message: any) => ({
+        const formattedMessages = blockchainMessages.map((message: any) => ({
           content: message.content,
           sender: message.sender,
           timestamp: new Date(parseInt(message.timestamp) * 1000).toLocaleString(),
         }));
         
-        setMessages(formattedMessages);
+        setBoardMessages(formattedMessages);
       }
     };
     
-    fetchMessages().catch(console.error);
-  }, [web3]);
+    loadMessagesFromBlockchain().catch(console.error);
+  }, [blockchainWeb3Instance]);
 
   return (
     <div>
-      {messages.map((message, index) => (
+      {boardMessages.map((message, index) => (
         <div key={index}>
           <p>Content: {message.content}</p>
           <p>Sender: {message.sender}</p>
@@ -54,4 +55,4 @@ const MessageList: React.FC = () => {
   );
 };
 
-export default MessageList;
+export default MessageBoard;
