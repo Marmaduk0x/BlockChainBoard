@@ -12,35 +12,36 @@ interface BlockchainMessage {
 
 const MessageBoard: React.FC = () => {
   const [boardMessages, setBoardMessages] = useState<BlockchainMessage[]>([]);
-  const blockchainWeb3Instance = useRef<Web2 | null>(null);
+  const blockchainWeb3Instance = useRef<Web3 | null>(null);
 
+  // This effect initializes Web3 instance
   useEffect(() => {
     if (window.ethereum) {
-      const web3 = new Web3(window.ethereum);
-      blockchainWeb3Instance.current = web3;
+      blockchainWeb3Instance.current = new Web3(window.ethereum);
     } else {
       console.error("Ethereum object not found. Please install MetaMask to interact with the blockchain.");
     }
   }, []);
 
+  // Function to load messages
   const loadMessagesFromBlockchain = useCallback(async () => {
-    if (blockchainWeb3Instance.current && blockchainContractAddress) {
-      const contract = new blockchainWeb3Instance.current.eth.Contract(contractABI, blockchainContractAddress);
-      const blockchainMessages = await contract.methods.getMessages().call();
+    if (!blockchainWeb3Instance.current || !blockchainContractAddress) return;
 
-      const formattedMessages = blockchainMessages.map((message: any) => ({
-        content: message.content,
-        sender: message.sender,
-        timestamp: new Date(parseInt(message.timestamp) * 1000).toLocaleString(),
-      }));
+    const contract = new blockchainWeb3Instance.current.eth.Contract(contractABI, blockchainContractAddress);
+    const blockchainMessages = await contract.methods.getMessages().call();
 
-      setBoardMessages(formattedMessages);
-    }
+    const formattedMessages = blockchainMessages.map((message: any) => ({
+      content: message.content,
+      sender: message.sender,
+      timestamp: new Date(parseInt(message.timestamp, 10) * 1000).toLocaleString(),
+    }));
+
+    setBoardMessages(formattedMessages);
   }, [blockchainContractAddress]);
 
+  // Effect to load messages from blockchain
   useEffect(() => {
     loadMessagesFromBlockchain().catch(console.error);
-    // Assuming contractAddress is the main dependency to re-fetch messages. Adjust accordingly if there are more triggers.
   }, [loadMessagesFromBlockchain]);
 
   return (
