@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import Web3 from 'web3';
 import contractABI from './contractABI.json';
 
@@ -14,21 +14,25 @@ const MessageBoard: React.FC = () => {
   const [boardMessages, setBoardMessages] = useState<BlockchainMessage[]>([]);
   const blockchainWeb3Instance = useRef<Web3 | null>(null);
 
-  // This effect initializes Web3 instance
   useEffect(() => {
-    if (window.ethereum) {
+    if (window.ethereum && !blockchainWeb3Instance.current) {
       blockchainWeb3Instance.current = new Web3(window.ethereum);
-    } else {
+    } else if(!window.ethereum) {
       console.error("Ethereum object not found. Please install MetaMask to interact with the blockchain.");
     }
   }, []);
 
-  // Function to load messages
-  const loadMessagesFromBlockchain = useCallback(async () => {
-    if (!blockchainWeb3Instance.current || !blockchainContractAddress) return;
+  const contractInstance = useMemo(() => {
+    if (!blockchainWeb3Instance.current || !blockchainContractAddress) {
+      return null;
+    }
+    return new blockchainWeb3Instance.current.eth.Contract(contractABI, blockchainContractAddress);
+  }, [blockchainContractAddress]);
 
-    const contract = new blockchainWeb3Instance.current.eth.Contract(contractABI, blockchainContractAddress);
-    const blockchainMessages = await contract.methods.getMessages().call();
+  const loadMessagesFromBlockchain = useCallback(async () => {
+    if (!contractInstance) return;
+
+    const blockchainMessages = await contractInstance.methods.getMessages().call();
 
     const formattedMessages = blockchainMessages.map((message: any) => ({
       content: message.content,
@@ -37,9 +41,8 @@ const MessageBoard: React.FC = () => {
     }));
 
     setBoardMessages(formattedMessages);
-  }, [blockchainContractAddress]);
+  }, [contractInstance]);
 
-  // Effect to load messages from blockchain
   useEffect(() => {
     loadMessagesFromBlockchain().catch(console.error);
   }, [loadMessagesFromBlockchain]);
