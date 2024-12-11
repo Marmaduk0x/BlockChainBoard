@@ -6,57 +6,57 @@ contract BulletinBoard {
     
     event MessageFlagged(uint256 indexed messageId, address indexed flagger, string reason);
     
-    struct BoardMessage {
+    struct Message {
         address sender;
         string content;
         uint256 postedAt;
-        bool isFlagged;
+        bool flagged;
         string flagReason;
     }
     
-    BoardMessage[] private boardMessages;
+    Message[] private messages;
 
-    function postMessage(string memory messageContent) public {
-        require(bytes(messageContent).length > 0, "Message cannot be empty");
+    function postMessage(string memory content) public {
+        require(bytes(content).length > 0, "Message cannot be empty");
 
-        boardMessages.push(BoardMessage(msg.sender, messageContent, block.timestamp, false, ""));
+        messages.push(Message(msg.sender, content, block.timestamp, false, ""));
         
-        emit MessagePosted(msg.sender, messageContent, block.timestamp);
+        emit MessagePosted(msg.sender, content, block.timestamp);
     }
     
-    function fetchAllMessages() public view returns (BoardMessage[] memory) {
-        require(boardMessages.length > 0, "No messages posted yet");
+    function getAllMessages() public view returns (Message[] memory) {
+        require(messages.length > 0, "No messages posted yet");
 
-        return boardMessages;
+        return messages;
     }
     
-    function flagMessage(uint256 messageId, string memory flagReason) public {
-        require(messageId < boardMessages.length, "Invalid message ID");
-        require(bytes(flagReason).length > 0, "Reason for flagging cannot be empty");
+    function flagMessage(uint256 messageId, string memory reason) public {
+        require(messageId < messages.length, "Invalid message ID");
+        require(bytes(reason).length > 0, "Flagging reason cannot be empty");
         
-        BoardMessage storage messageToFlag = boardMessages[messageId];
-        require(!messageToFlag.isFlagged, "Message already flagged");
+        Message storage messageToFlag = messages[messageId];
+        require(!messageToFlag.flagged, "Message already flagged");
 
-        messageToFlag.isFlagged = true;
-        messageToFlag.flagReason = flagReason;
+        messageToFlag.flagged = true;
+        messageToFlag.flagReason = reason;
         
-        emit MessageFlagged(messageId, msg.sender, flagReason);
+        emit MessageFlagged(messageId, msg.sender, reason);
     }
     
-    function fetchUnflaggedMessages() public view returns (BoardMessage[] memory) {
+    function getUnflaggedMessages() public view returns (Message[] memory) {
         uint256 unflaggedCount = 0;
-        for (uint256 i = 0; i < boardMessages.length; i++) {
-            if (!boardMessages[i].isFlagged) {
+        for (uint256 i = 0; i < messages.length; i++) {
+            if (!messages[i].flagged) {
                 unflaggedCount++;
             }
         }
         
-        BoardMessage[] memory unflaggedMessages = new BoardMessage[](unflaggedCount);
-        uint256 j = 0;
-        for (uint256 i = 0; i < boardMessages.length; i++) {
-            if (!boardMessages[i].isFlagged) {
-                unflaggedMessages[j] = boardMessages[i];
-                j++;
+        Message[] memory unflaggedMessages = new Message[](unflaggedCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < messages.length; i++) {
+            if (!messages[i].flagged) {
+                unflaggedMessages[index] = messages[i];
+                index++;
             }
         }
         
